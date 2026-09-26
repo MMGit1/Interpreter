@@ -1,0 +1,9 @@
+# .NET build output
+[Bb]in/
+[Oo]bj/
+
+# Rider and Visual Studio user settings
+.idea/
+*.suo
+*.user
+*.DotSettings.user
