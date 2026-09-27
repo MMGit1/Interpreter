@@ -29,10 +29,12 @@ public class ProgramExecutionTests
     {
         // Arrange
         var source = $$"""
-                         CONST {{left}}
-                         CONST {{right}}
-                         BINOP {{operation}}
-                         WRITE
+                         [
+                           { "CONST": {{left}} },
+                           { "CONST": {{right}} },
+                           { "BINOP": "{{operation}}" },
+                           "WRITE"
+                         ]
                          """;
 
         // Act
@@ -47,10 +49,12 @@ public class ProgramExecutionTests
     {
         // Arrange
         const string source = """
-                              READ
-                              ST number
-                              LD number
-                              WRITE
+                              [
+                                "READ",
+                                { "ST": "number" },
+                                { "LD": "number" },
+                                "WRITE"
+                              ]
                               """;
 
         // Act
@@ -68,12 +72,14 @@ public class ProgramExecutionTests
     {
         // Arrange
         const string source = """
-                              JMP end
-                              CONST 99
-                              WRITE
-                              LABEL end
-                              CONST 7
-                              WRITE
+                              [
+                                { "JMP": "end" },
+                                { "CONST": 99 },
+                                "WRITE",
+                                { "LABEL": "end" },
+                                { "CONST": 7 },
+                                "WRITE"
+                              ]
                               """;
 
         // Act
@@ -90,13 +96,15 @@ public class ProgramExecutionTests
     {
         // Arrange
         const string source = """
-                              CONST 0
-                              JZ end
-                              CONST 99
-                              WRITE
-                              LABEL end
-                              CONST 1
-                              WRITE
+                              [
+                                { "CONST": 0 },
+                                { "JZ": "end" },
+                                { "CONST": 99 },
+                                "WRITE",
+                                { "LABEL": "end" },
+                                { "CONST": 1 },
+                                "WRITE"
+                              ]
                               """;
 
         // Act
@@ -113,11 +121,13 @@ public class ProgramExecutionTests
     {
         // Arrange
         const string source = """
-                              CONST 0
-                              JNZ skip
-                              CONST 5
-                              WRITE
-                              LABEL skip
+                              [
+                                { "CONST": 0 },
+                                { "JNZ": "skip" },
+                                { "CONST": 5 },
+                                "WRITE",
+                                { "LABEL": "skip" }
+                              ]
                               """;
 
         // Act

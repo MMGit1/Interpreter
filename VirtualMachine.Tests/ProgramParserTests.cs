@@ -11,12 +11,14 @@ public class ProgramParserTests
     {
         // Arrange
         const string source = """
-                              READ
-                              ST a
-                              LD a
-                              CONST 2
-                              BINOP +
-                              WRITE
+                              [
+                                "READ",
+                                { "ST": "a" },
+                                { "LD": "a" },
+                                { "CONST": 2 },
+                                { "BINOP": "+" },
+                                "WRITE"
+                              ]
                               """;
 
         // Act
@@ -36,10 +38,17 @@ public class ProgramParserTests
     }
 
     [Fact]
-    public void ParseSkipsBlankLinesAndWhitespace()
+    public void ParseAcceptsFormattedJson()
     {
         // Arrange
-        const string source = "\n\tCONST\t5\n\nWRITE";
+        const string source = """
+                              [
+
+                                { "CONST": 5 },
+
+                                "WRITE"
+                              ]
+                              """;
 
         // Act
         var result = Parse(source);
@@ -53,7 +62,7 @@ public class ProgramParserTests
     public void ParseReturnsFailureForUnknownCommand()
     {
         // Arrange
-        const string source = "UNKNOWN";
+        const string source = "[\"UNKNOWN\"]";
 
         // Act
         var result = Parse(source);
@@ -64,17 +73,17 @@ public class ProgramParserTests
     }
 
     [Fact]
-    public void ParseReturnsFailureWhenBinaryOperatorIsMissing()
+    public void ParseReturnsFailureWhenInstructionArgumentIsNotScalar()
     {
         // Arrange
-        const string source = "BINOP";
+        const string source = "[{ \"BINOP\": null }]";
 
         // Act
         var result = Parse(source);
 
         // Assert
         var failure = Assert.IsType<ProgramParsingResult.Failure>(result);
-        Assert.Equal("BINOP requires an operator", failure.ErrorMessage);
+        Assert.Equal("Instruction argument must be a string or a number", failure.ErrorMessage);
     }
 
     private static ProgramParsingResult Parse(string source)
