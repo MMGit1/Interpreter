@@ -78,15 +78,48 @@ public class ProgramParser(
         }
 
         var property = properties[0];
-        var argument = property.Value.ValueKind switch
-        {
-            JsonValueKind.String => property.Value.GetString(),
-            JsonValueKind.Number => property.Value.GetRawText(),
-            _ => null
-        };
+        var tokens = new List<string> { property.Name };
 
-        return argument is null
-            ? new TokenResult.Failure("Instruction argument must be a string or a number")
-            : new TokenResult.Success([property.Name, argument]);
+        if (property.Value.ValueKind == JsonValueKind.String)
+        {
+            tokens.Add(property.Value.GetString()!);
+
+            return new TokenResult.Success(tokens.ToArray());
+        }
+
+        if (property.Value.ValueKind == JsonValueKind.Number)
+        {
+            tokens.Add(property.Value.GetRawText());
+
+            return new TokenResult.Success(tokens.ToArray());
+        }
+
+        if (property.Value.ValueKind != JsonValueKind.Array)
+        {
+            return new TokenResult.Failure(
+                "Instruction argument must be a string, number or array"
+            );
+        }
+
+        foreach (var argument in property.Value.EnumerateArray())
+        {
+            if (argument.ValueKind is not (JsonValueKind.String or JsonValueKind.Number))
+            {
+                return new TokenResult.Failure(
+                    "Instruction argument array must contain strings or numbers"
+                );
+            }
+
+            if (argument.ValueKind == JsonValueKind.String)
+            {
+                tokens.Add(argument.GetString()!);
+            }
+            else
+            {
+                tokens.Add(argument.GetRawText());
+            }
+        }
+
+        return new TokenResult.Success(tokens.ToArray());
     }
 }

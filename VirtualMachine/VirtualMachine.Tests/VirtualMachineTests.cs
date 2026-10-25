@@ -139,6 +139,62 @@ public class ProgramExecutionTests
         AssertSingleLine("5", output);
     }
 
+    [Fact]
+    public void ExecuteBuildsReadsAndChangesArray()
+    {
+        // Arrange
+        const string source = """
+                              [
+                                { "CONST": 10 },
+                                { "CONST": 20 },
+                                { "ARRAY": 2 },
+                                { "ST": "values" },
+                                { "LD": "values" },
+                                { "CONST": 1 },
+                                { "CONST": 42 },
+                                "SET",
+                                { "LD": "values" },
+                                { "CONST": 1 },
+                                "ELEM",
+                                "WRITE",
+                                { "LD": "values" },
+                                "LENGTH",
+                                "WRITE"
+                              ]
+                              """;
+
+        // Act
+        var output = Execute(source);
+
+        // Assert
+        Assert.Equal($"42{Environment.NewLine}2{Environment.NewLine}", output);
+    }
+
+    [Fact]
+    public void ExecuteWritesStringAndSExpression()
+    {
+        // Arrange
+        const string source = """
+                              [
+                                { "STRING": "hello" },
+                                "WRITE",
+                                { "CONST": 1 },
+                                { "STRING": "x" },
+                                { "SEXP": ["Node", 2] },
+                                "WRITE"
+                              ]
+                              """;
+
+        // Act
+        var output = Execute(source);
+
+        // Assert
+        Assert.Equal(
+            $"hello{Environment.NewLine}Node(1, x){Environment.NewLine}",
+            output
+        );
+    }
+
     private static string Execute(string source, string input = "")
     {
         using var inputReader = new StringReader(input);

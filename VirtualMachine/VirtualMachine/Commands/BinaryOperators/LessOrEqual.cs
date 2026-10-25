@@ -1,8 +1,8 @@
 namespace VirtualMachine.Commands.BinaryOperators;
 
-public class LessOrEqual : IBinaryOperation
+public class LessOrEqual : IntegerBinaryOperation
 {
-    public int Apply(int left, int right)
+    protected override int Apply(int left, int right)
     {
         return left <= right ? 1 : 0;
     }

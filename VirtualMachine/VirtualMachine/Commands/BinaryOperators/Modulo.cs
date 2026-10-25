@@ -1,8 +1,8 @@
 namespace VirtualMachine.Commands.BinaryOperators;
 
-public class Modulo : IBinaryOperation
+public class Modulo : IntegerBinaryOperation
 {
-    public int Apply(int left, int right)
+    protected override int Apply(int left, int right)
     {
         return left % right;
     }

@@ -83,7 +83,28 @@ public class ProgramParserTests
 
         // Assert
         var failure = Assert.IsType<ProgramParsingResult.Failure>(result);
-        Assert.Equal("Instruction argument must be a string or a number", failure.ErrorMessage);
+        Assert.Equal(
+            "Instruction argument must be a string, number or array",
+            failure.ErrorMessage
+        );
+    }
+
+    [Fact]
+    public void ParseAcceptsSExpressionWithTwoArguments()
+    {
+        // Arrange
+        const string source = """
+                              [
+                                { "SEXP": ["Node", 2] }
+                              ]
+                              """;
+
+        // Act
+        var result = Parse(source);
+
+        // Assert
+        var success = Assert.IsType<ProgramParsingResult.Success>(result);
+        Assert.IsType<SExpression>(success.Commands.Single());
     }
 
     private static ProgramParsingResult Parse(string source)

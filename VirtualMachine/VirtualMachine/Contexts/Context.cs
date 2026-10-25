@@ -1,28 +1,30 @@
+using VirtualMachine.Values;
+
 namespace VirtualMachine.Contexts;
 
 public class Context(
     TextReader input,
     TextWriter output)
 {
-    private readonly Stack<int> _stack = new Stack<int>();
+    private readonly Stack<IValue> _stack = new Stack<IValue>();
 
-    private readonly Dictionary<string, int> _variables = new Dictionary<string, int>();
+    private readonly Dictionary<string, IValue> _variables = new Dictionary<string, IValue>();
     
     private readonly Dictionary<string, int> _labels = new Dictionary<string, int>();
 
     public int ProgramCounter { get; set; } = 0;
 
-    public void Push(int value)
+    public void Push(IValue value)
     {
         _stack.Push(value);
     }
 
-    public int Pop()
+    public IValue Pop()
     {
         return _stack.Pop();
     }
 
-    public int GetVariable(string name)
+    public IValue GetVariable(string name)
     {
         if (!_variables.TryGetValue(name, out var value))
         {
@@ -32,7 +34,7 @@ public class Context(
         return value;
     }
 
-    public void SetVariable(string name, int value)
+    public void SetVariable(string name, IValue value)
     {
         _variables[name] = value;
     }
@@ -52,7 +54,7 @@ public class Context(
         _labels[name] = value;
     }
 
-    public int ReadInput()
+    public IValue ReadInput()
     {
         var line = input.ReadLine();
 
@@ -66,11 +68,11 @@ public class Context(
             throw new FormatException($"'{line}' is not an integer");
         }
 
-        return result;
+        return new IntegerValue(result);
     }
-    
-    public void Write(int value)
+
+    public void Write(IValue value)
     {
-        output.WriteLine(value);
+        output.WriteLine(value.Format());
     }
 }

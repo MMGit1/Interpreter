@@ -1,9 +1,11 @@
 namespace VirtualMachine.Commands.BinaryOperators;
 
+using VirtualMachine.Values;
+
 public class NotEqual : IBinaryOperation
 {
-    public int Apply(int left, int right)
+    public IValue Apply(IValue left, IValue right)
     {
-        return left != right ? 1 : 0;
+        return new IntegerValue(!Equals(left, right) ? 1 : 0);
     }
 }
