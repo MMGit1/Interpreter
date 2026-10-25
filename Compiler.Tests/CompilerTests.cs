@@ -129,6 +129,70 @@ public class CompilerTests
     }
 
     [Fact]
+    public void CompileSupportsArraysAndStrings()
+    {
+        // Arrange
+        const string source = """
+                              {
+                                  values = [10, 20];
+                                  values[1] = 42;
+                                  write(values[1]);
+                                  write(values.length);
+                                  write("hello");
+                              }
+                              """;
+
+        // Act
+        var output = CompileAndExecute(source);
+
+        // Assert
+        Assert.Equal(["42", "2", "hello"], ReadLines(output));
+    }
+
+    [Fact]
+    public void CompileSupportsCompoundArrayAssignment()
+    {
+        // Arrange
+        const string source = """
+                              {
+                                  values = [10, 20];
+                                  values[1] += 22;
+                                  write(values[1]);
+                              }
+                              """;
+
+        // Act
+        var output = CompileAndExecute(source);
+
+        // Assert
+        AssertSingleLine("42", output);
+    }
+
+    [Fact]
+    public void CompileSupportsCharactersConstructorsAndCons()
+    {
+        // Arrange
+        const string source = """
+                              {
+                                  values = 1 : [2, 3];
+                                  write(values);
+                                  write('x');
+                                  write(Node(1, "value"));
+                                  write(Nil);
+                              }
+                              """;
+
+        // Act
+        var output = CompileAndExecute(source);
+
+        // Assert
+        Assert.Equal(
+            ["[1; 2; 3]", "x", "Node(1, value)", "Nil"],
+            ReadLines(output)
+        );
+    }
+
+    [Fact]
     public void CompileReturnsFailureForInvalidSource()
     {
         // Arrange

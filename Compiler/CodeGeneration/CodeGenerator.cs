@@ -9,11 +9,13 @@ public sealed class CodeGenerator : ICodeGenerator, IStatementVisitor, IExpressi
 {
     private readonly List<IVmInstruction> _instructions = [];
     private int _labelNumber;
+    private int _temporaryNumber;
 
     public CompilationResult Generate(ProgramNode program)
     {
         _instructions.Clear();
         _labelNumber = 0;
+        _temporaryNumber = 0;
 
         foreach (var statement in program.Statements)
         {
@@ -50,6 +52,24 @@ public sealed class CodeGenerator : ICodeGenerator, IStatementVisitor, IExpressi
         }
 
         Emit("ST", node.Name);
+    }
+
+    public void Visit(ElementAssignmentNode node)
+    {
+        if (node.Operator.UnderlyingBinaryOperator is null)
+        {
+            EmitElementAssignment(node.Destination, node.Expression);
+
+            return;
+        }
+
+        node.Destination.Accept(this);
+        node.Expression.Accept(this);
+        Emit("BINOP", node.Operator.UnderlyingBinaryOperator.Symbol);
+
+        var temporary = NewTemporary();
+        Emit("ST", temporary);
+        EmitElementAssignment(node.Destination, new VariableNode(temporary));
     }
 
     public void Visit(BlockNode node)
@@ -121,6 +141,44 @@ public sealed class CodeGenerator : ICodeGenerator, IStatementVisitor, IExpressi
         Emit("CONST", node.Value);
     }
 
+    public void Visit(StringNode node)
+    {
+        Emit("STRING", node.Value);
+    }
+
+    public void Visit(ArrayNode node)
+    {
+        foreach (var element in node.Elements)
+        {
+            element.Accept(this);
+        }
+
+        Emit("ARRAY", node.Elements.Count);
+    }
+
+    public void Visit(ElementNode node)
+    {
+        node.Context.Accept(this);
+        node.Index.Accept(this);
+        Emit("ELEM");
+    }
+
+    public void Visit(LengthNode node)
+    {
+        node.Context.Accept(this);
+        Emit("LENGTH");
+    }
+
+    public void Visit(SExpressionNode node)
+    {
+        foreach (var argument in node.Arguments)
+        {
+            argument.Accept(this);
+        }
+
+        EmitSExpression(node.Name, node.Arguments.Count);
+    }
+
     public void Visit(VariableNode node)
     {
         Emit("LD", node.Name);
@@ -148,6 +206,13 @@ public sealed class CodeGenerator : ICodeGenerator, IStatementVisitor, IExpressi
         _instructions.Add(new NumberArgumentInstruction(opcode, argument));
     }
 
+    private void EmitSExpression(string name, int argumentCount)
+    {
+        _instructions.Add(
+            new TextAndNumberArgumentInstruction("SEXP", name, argumentCount)
+        );
+    }
+
     private void EmitLabel(string label)
     {
         Emit("LABEL", label);
@@ -156,5 +221,20 @@ public sealed class CodeGenerator : ICodeGenerator, IStatementVisitor, IExpressi
     private string NewLabel(string purpose)
     {
         return $"L_{purpose}_{_labelNumber++}";
+    }
+
+    private void EmitElementAssignment(
+        ElementNode destination,
+        IExpressionNode expression)
+    {
+        destination.Context.Accept(this);
+        destination.Index.Accept(this);
+        expression.Accept(this);
+        Emit("SET");
+    }
+
+    private string NewTemporary()
+    {
+        return $"_temporary_{_temporaryNumber++}";
     }
 }

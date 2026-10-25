@@ -5,6 +5,7 @@ using Compiler.Parsing.Ast.Statements;
 using Compiler.Parsing.Operators;
 using Compiler.Parsing.Results;
 using Compiler.Parsing.StatementParsing;
+using System.Text.Json;
 
 namespace Compiler.Parsing;
 
@@ -97,6 +98,37 @@ public sealed class SourceParser(
         }
 
         return new AssignmentNode(name, operation, expression);
+    }
+
+    public IStatementNode ParseAssignmentOrElementAssignment(bool optionalSemicolon)
+    {
+        var destination = new VariableNode(ConsumeIdentifier());
+        var access = ParsePostfix(destination);
+
+        if (!_operatorCatalog.TryGetAssignment(Current.Text, out var operation))
+        {
+            throw Error("Assignment operator expected");
+        }
+
+        Advance();
+        var expression = ParseExpression();
+
+        if (optionalSemicolon)
+        {
+            OptionalSemicolon();
+        }
+
+        if (access is VariableNode variable)
+        {
+            return new AssignmentNode(variable.Name, operation, expression);
+        }
+
+        if (access is ElementNode element)
+        {
+            return new ElementAssignmentNode(element, operation, expression);
+        }
+
+        return Fail<IStatementNode>("Assignment destination expected");
     }
 
     public WhileNode ParseWhile()
@@ -203,12 +235,12 @@ public sealed class SourceParser(
 
     private IExpressionNode ParseAdditive()
     {
-        return ParseBinary(ParseMultiplicative, ["+", "-"]);
+        return ParseBinary(ParseMultiplicative, [":", "+", "-"]);
     }
 
     private IExpressionNode ParseMultiplicative()
     {
-        return ParseBinary(ParsePrimary, ["*", "/", "%"]);
+        return ParseBinary(ParsePostfix, ["*", "/", "%"]);
     }
 
     private IExpressionNode ParseBinary(Func<IExpressionNode> next, IReadOnlyCollection<string> symbols)
@@ -241,6 +273,30 @@ public sealed class SourceParser(
             return new VariableNode(Advance().Text);
         }
 
+        if (IsUpperIdentifier(Current.Text))
+        {
+            return ParseSExpression();
+        }
+
+        if (IsString(Current.Text))
+        {
+            string stringValue = JsonSerializer.Deserialize<string>(Advance().Text)!;
+
+            return new StringNode(stringValue);
+        }
+
+        if (IsCharacter(Current.Text))
+        {
+            string characterValue = ParseCharacter(Advance().Text);
+
+            return new StringNode(characterValue);
+        }
+
+        if (Match("["))
+        {
+            return ParseArrayLiteral();
+        }
+
         if (Match("("))
         {
             var expression = ParseExpression();
@@ -249,6 +305,78 @@ public sealed class SourceParser(
         }
 
         return Fail<IExpressionNode>("Expression expected");
+    }
+
+    private SExpressionNode ParseSExpression()
+    {
+        string name = Advance().Text;
+        var arguments = new List<IExpressionNode>();
+
+        if (!Match("("))
+        {
+            return new SExpressionNode(name, arguments);
+        }
+
+        if (!Check(")"))
+        {
+            arguments.Add(ParseExpression());
+
+            while (Match(","))
+            {
+                arguments.Add(ParseExpression());
+            }
+        }
+
+        Consume(")", "')' expected");
+
+        return new SExpressionNode(name, arguments);
+    }
+
+    private IExpressionNode ParsePostfix()
+    {
+        return ParsePostfix(ParsePrimary());
+    }
+
+    private IExpressionNode ParsePostfix(IExpressionNode expression)
+    {
+        while (true)
+        {
+            if (Match("["))
+            {
+                var index = ParseExpression();
+                Consume("]", "']' expected");
+                expression = new ElementNode(expression, index);
+                continue;
+            }
+
+            if (Match("."))
+            {
+                Consume("length", "'length' expected");
+                expression = new LengthNode(expression);
+                continue;
+            }
+
+            return expression;
+        }
+    }
+
+    private ArrayNode ParseArrayLiteral()
+    {
+        var elements = new List<IExpressionNode>();
+
+        if (!Check("]"))
+        {
+            elements.Add(ParseExpression());
+
+            while (Match(","))
+            {
+                elements.Add(ParseExpression());
+            }
+        }
+
+        Consume("]", "']' expected");
+
+        return new ArrayNode(elements);
     }
 
     private string ConsumeIdentifier()
@@ -265,6 +393,38 @@ public sealed class SourceParser(
     {
         return text.Length > 0 &&
                char.IsLower(text[0]) &&
+               text.All(character => char.IsLetterOrDigit(character) || character is '_' or '\'');
+    }
+
+    private static bool IsString(string text)
+    {
+        return text.Length >= 2 && text[0] == '"' && text[^1] == '"';
+    }
+
+    private static bool IsCharacter(string text)
+    {
+        return text.Length >= 3 && text[0] == '\'' && text[^1] == '\'';
+    }
+
+    private static string ParseCharacter(string text)
+    {
+        string value = text[1..^1];
+
+        return value switch
+        {
+            "\\n" => "\n",
+            "\\r" => "\r",
+            "\\t" => "\t",
+            "\\'" => "'",
+            "\\\\" => "\\",
+            _ => value
+        };
+    }
+
+    private static bool IsUpperIdentifier(string text)
+    {
+        return text.Length > 0 &&
+               char.IsUpper(text[0]) &&
                text.All(character => char.IsLetterOrDigit(character) || character is '_' or '\'');
     }
 

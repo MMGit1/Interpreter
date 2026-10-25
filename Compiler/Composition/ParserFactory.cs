@@ -27,6 +27,7 @@ public sealed class ParserFactory : IParserFactory
             new BinaryOperator("<"),
             new BinaryOperator(">="),
             new BinaryOperator(">"),
+            new BinaryOperator(":"),
             new BinaryOperator("+"),
             new BinaryOperator("-"),
             new BinaryOperator("*"),

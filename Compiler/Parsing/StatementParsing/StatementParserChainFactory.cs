@@ -32,6 +32,6 @@ public sealed class StatementParserChainFactory : IStatementParserChainFactory
                 parser => parser.ParseBlock()))
             .AddNext(new StatementParserLink(
                 parser => parser.IsCurrentIdentifier(),
-                parser => parser.ParseAssignment(true)));
+                parser => parser.ParseAssignmentOrElementAssignment(true)));
     }
 }

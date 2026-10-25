@@ -52,7 +52,7 @@ public sealed class Tokenizer : ITokenizer
             var tokenLine = line;
             var tokenColumn = column;
 
-            if (char.IsLower(current))
+            if (char.IsLower(current) || char.IsUpper(current))
             {
                 var start = index;
                 do
@@ -67,6 +67,38 @@ public sealed class Tokenizer : ITokenizer
                 continue;
             }
 
+            if (current == '\'')
+            {
+                var start = index;
+                Advance(source, ref index, ref line, ref column);
+
+                while (index < source.Length && source[index] != '\'')
+                {
+                    if (source[index] == '\\')
+                    {
+                        Advance(source, ref index, ref line, ref column);
+                    }
+
+                    if (index == source.Length)
+                    {
+                        break;
+                    }
+
+                    Advance(source, ref index, ref line, ref column);
+                }
+
+                if (index == source.Length)
+                {
+                    return new TokenizationResult.Failure(
+                        $"Unclosed character at ({tokenLine}:{tokenColumn})"
+                    );
+                }
+
+                Advance(source, ref index, ref line, ref column);
+                tokens.Add(new Token(source[start..index], tokenLine, tokenColumn));
+                continue;
+            }
+
             if (char.IsDigit(current))
             {
                 var start = index;
@@ -75,6 +107,38 @@ public sealed class Tokenizer : ITokenizer
                     Advance(source, ref index, ref line, ref column);
                 }
 
+                tokens.Add(new Token(source[start..index], tokenLine, tokenColumn));
+                continue;
+            }
+
+            if (current == '"')
+            {
+                var start = index;
+                Advance(source, ref index, ref line, ref column);
+
+                while (index < source.Length && source[index] != '"')
+                {
+                    if (source[index] == '\\')
+                    {
+                        Advance(source, ref index, ref line, ref column);
+                    }
+
+                    if (index == source.Length)
+                    {
+                        break;
+                    }
+
+                    Advance(source, ref index, ref line, ref column);
+                }
+
+                if (index == source.Length)
+                {
+                    return new TokenizationResult.Failure(
+                        $"Unclosed string at ({tokenLine}:{tokenColumn})"
+                    );
+                }
+
+                Advance(source, ref index, ref line, ref column);
                 tokens.Add(new Token(source[start..index], tokenLine, tokenColumn));
                 continue;
             }
@@ -106,7 +170,7 @@ public sealed class Tokenizer : ITokenizer
         text is "!!" or "&&" or "==" or "!=" or "<=" or ">=" or "+=" or "-=" or "*=" or "/=" or "%=";
 
     private static bool IsSingleCharacterToken(char character) =>
-        character is '{' or '}' or '(' or ')' or ';' or '=' or '<' or '>' or '+' or '-' or '*' or '/' or '%';
+        character is '{' or '}' or '[' or ']' or '(' or ')' or ';' or ',' or '.' or ':' or '=' or '<' or '>' or '+' or '-' or '*' or '/' or '%';
 
     private static char? Peek(string source, int index) => index + 1 < source.Length ? source[index + 1] : null;
 
