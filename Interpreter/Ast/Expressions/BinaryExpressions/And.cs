@@ -1,10 +1,10 @@
 namespace Interpreter.Ast.Expressions.BinaryExpressions;
 
-public class And(IExpression left, IExpression right)
-    : BinaryExpression(left, right)
+public sealed class And(IExpression left, IExpression right)
+    : IntegerBinaryExpression(left, right)
 {
-    protected override int Apply(int leftValue, int rightValue)
+    protected override int Apply(int left, int right)
     {
-        return leftValue != 0 && rightValue != 0 ? 1 : 0;
+        return left != 0 && right != 0 ? 1 : 0;
     }
 }

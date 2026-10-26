@@ -1,4 +1,5 @@
 using Interpreter.Context;
+using Interpreter.Ast.Values;
 
 namespace Interpreter.Ast.Expressions;
 
@@ -11,8 +12,8 @@ public class Constant : IExpression
         Value = value;
     }
 
-    public int Evaluate(InterpreterContext context)
+    public IValue Evaluate(InterpreterContext context)
     {
-        return Value;
+        return new IntegerValue(Value);
     }
 }

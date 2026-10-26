@@ -2,14 +2,16 @@ using Interpreter.Exceptions;
 
 namespace Interpreter.Ast.Expressions.BinaryExpressions;
 
-public class Divide(IExpression left, IExpression right)
-    : BinaryExpression(left, right)
+public sealed class Divide(IExpression left, IExpression right)
+    : IntegerBinaryExpression(left, right)
 {
-    protected override int Apply(int leftValue, int rightValue)
+    protected override int Apply(int left, int right)
     {
-        if (rightValue == 0)
+        if (right == 0)
+        {
             throw new DivisionByZeroException();
+        }
 
-        return leftValue / rightValue;
+        return left / right;
     }
 }

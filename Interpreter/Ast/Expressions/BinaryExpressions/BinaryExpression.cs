@@ -1,3 +1,4 @@
+using Interpreter.Ast.Values;
 using Interpreter.Context;
 
 namespace Interpreter.Ast.Expressions.BinaryExpressions;
@@ -8,13 +9,13 @@ public abstract class BinaryExpression(IExpression left, IExpression right) : IE
 
     private IExpression Right { get; } = right;
 
-    public int Evaluate(InterpreterContext context)
+    public IValue Evaluate(InterpreterContext context)
     {
-        var leftValue = Left.Evaluate(context);
-        var rightValue = Right.Evaluate(context);
-        
+        IValue leftValue = Left.Evaluate(context);
+        IValue rightValue = Right.Evaluate(context);
+
         return Apply(leftValue, rightValue);
     }
-    
-    protected abstract int Apply(int leftValue, int rightValue);
+
+    protected abstract IValue Apply(IValue leftValue, IValue rightValue);
 }

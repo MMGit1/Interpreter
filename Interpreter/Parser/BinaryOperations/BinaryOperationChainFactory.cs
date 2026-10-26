@@ -7,6 +7,7 @@ public class BinaryOperationChainFactory : IBinaryOperationChainFactory
     public IBinaryOperationParserLink Create()
     {
         return new AddLink()
+            .AddNext(new ConsLink())
             .AddNext(new SubtractLink())
             .AddNext(new MultiplyLink())
             .AddNext(new DivideLink())

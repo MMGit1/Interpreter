@@ -7,9 +7,9 @@ using Interpreter.Parser.Statements;
 
 namespace Interpreter;
 
-internal class Program
+public class Program
 {
-    private static void Main(string[] args)
+    private static void Main()
     {
         var binaryOperationParser = new BinaryOperationParser(
             new BinaryOperationChainFactory()

@@ -1,3 +1,4 @@
+using Interpreter.Ast.Values;
 using Interpreter.Exceptions;
 
 namespace Interpreter.Context;
@@ -6,30 +7,34 @@ public class InterpreterContext(
     TextReader input,
     TextWriter output)
 {
-    private readonly Dictionary<string, int> _variables = new();
+    private readonly Dictionary<string, IValue> _variables = new();
     private readonly Queue<string> _inputBuffer = new();
 
-    public int GetVariable(string name)
+    public IValue GetVariable(string name)
     {
         if (!_variables.TryGetValue(name, out var value))
+        {
             throw new UndefinedVariableException(name);
+        }
 
         return value;
     }
 
-    public void SetVariable(string name, int value)
+    public void SetVariable(string name, IValue value)
     {
         _variables[name] = value;
     }
 
-    public int ReadInput()
+    public IValue ReadInput()
     {
         while (_inputBuffer.Count == 0)
         {
             string? line = input.ReadLine();
 
             if (line is null)
+            {
                 throw new NoInputException();
+            }
 
             foreach (var token in line.Split(
                          ' ',
@@ -39,11 +44,11 @@ public class InterpreterContext(
             }
         }
 
-        return int.Parse(_inputBuffer.Dequeue());
+        return new IntegerValue(int.Parse(_inputBuffer.Dequeue()));
     }
 
-    public void WriteOutput(int value)
+    public void WriteOutput(IValue value)
     {
-        output.WriteLine(value);
+        output.WriteLine(value.Format());
     }
 }

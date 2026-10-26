@@ -9,7 +9,8 @@ public class StatementChainFactory(
 {
     public IStatementParserLink Create(IStatementParser parser)
     {
-        return new AssignmentLink(expressionParser)
+        return new ArrayAssignmentLink(expressionParser)
+            .AddNext(new AssignmentLink(expressionParser))
             .AddNext(new SequenceLink(parser))
             .AddNext(new ReadLink())
             .AddNext(new WriteLink(expressionParser))

@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Interpreter.Ast.Statements;
+using Interpreter.Ast.Expressions;
 using Interpreter.Parser.Expressions;
 using Interpreter.Parser.Results;
 
@@ -17,18 +18,14 @@ public class AssignmentLink(IExpressionParser expressionParser)
         }
 
         if (!assignmentElement.TryGetProperty("dst", out JsonElement destinationElement))
+        {
             return new StatementParseResult.Failure("Missing assignment destination");
-
-        if (destinationElement.ValueKind != JsonValueKind.String)
-            return new StatementParseResult.Failure("Invalid assignment destination");
-
-        string? destination = destinationElement.GetString();
-
-        if (destination is null)
-            return new StatementParseResult.Failure("Assignment destination is null");
+        }
 
         if (!assignmentElement.TryGetProperty("src", out JsonElement sourceElement))
+        {
             return new StatementParseResult.Failure("Missing assignment source");
+        }
 
         var sourceResult = expressionParser.Parse(sourceElement);
 
@@ -37,11 +34,34 @@ public class AssignmentLink(IExpressionParser expressionParser)
                 ((ExpressionParseResult.Failure)sourceResult).Message
             );
 
+        if (destinationElement.ValueKind == JsonValueKind.String)
+        {
+            return new StatementParseResult.Success(
+                new Assignment(
+                    destinationElement.GetString()!,
+                    sourceSuccess.Expression
+                )
+            );
+        }
+
+        var destinationResult = expressionParser.Parse(destinationElement);
+
+        if (destinationResult is not ExpressionParseResult.Success destinationSuccess)
+        {
+            return new StatementParseResult.Failure(
+                ((ExpressionParseResult.Failure)destinationResult).Message
+            );
+        }
+
+        if (destinationSuccess.Expression is not ArrayElementAccess access)
+        {
+            return new StatementParseResult.Failure(
+                "Assignment destination must be a variable or array element"
+            );
+        }
+
         return new StatementParseResult.Success(
-            new Assignment(
-                destination,
-                sourceSuccess.Expression
-            )
+            new ArrayAssignment(access, sourceSuccess.Expression)
         );
     }
 }

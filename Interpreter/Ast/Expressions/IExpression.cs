@@ -1,8 +1,9 @@
 using Interpreter.Context;
+using Interpreter.Ast.Values;
 
 namespace Interpreter.Ast.Expressions;
 
 public interface IExpression
 {
-    int Evaluate(InterpreterContext context);
+    IValue Evaluate(InterpreterContext context);
 }

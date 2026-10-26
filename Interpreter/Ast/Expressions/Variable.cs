@@ -1,4 +1,5 @@
 using Interpreter.Context;
+using Interpreter.Ast.Values;
 
 namespace Interpreter.Ast.Expressions;
 
@@ -11,7 +12,7 @@ public class Variable : IExpression
         Name = name;
     }
 
-    public int Evaluate(InterpreterContext context)
+    public IValue Evaluate(InterpreterContext context)
     {
         return context.GetVariable(Name);
     }
