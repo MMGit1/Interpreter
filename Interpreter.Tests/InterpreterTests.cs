@@ -444,6 +444,240 @@ public class InterpreterTests
         );
     }
 
+    [Fact]
+    public void StringValueCanBeWritten()
+    {
+        // Arrange
+        const string json = """
+                            {
+                              "write": { "string": "hello" }
+                            }
+                            """;
+
+        // Act
+        var output = Execute(json);
+
+        // Assert
+        Assert.Equal($"hello{Environment.NewLine}", output);
+    }
+
+    [Fact]
+    public void EqualReturnsOneForEqualStrings()
+    {
+        // Arrange
+        const string json = """
+                            {
+                              "write": {
+                                "binop": "==",
+                                "left": { "string": "hello" },
+                                "right": { "string": "hello" }
+                              }
+                            }
+                            """;
+
+        // Act
+        var output = Execute(json);
+
+        // Assert
+        Assert.Equal($"1{Environment.NewLine}", output);
+    }
+
+    [Fact]
+    public void CharacterSExpressionAndConsCanBeWritten()
+    {
+        // Arrange
+        const string json = """
+                            {
+                              "seq": {
+                                "left": {
+                                  "write": {
+                                    "binop": ":",
+                                    "left": { "char": "x" },
+                                    "right": {
+                                      "array": [{ "const": 1 }, { "const": 2 }]
+                                    }
+                                  }
+                                },
+                                "right": {
+                                  "write": {
+                                    "sexp": {
+                                      "name": "Node",
+                                      "arguments": [
+                                        { "const": 1 },
+                                        { "string": "value" }
+                                      ]
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                            """;
+
+        // Act
+        var output = Execute(json);
+
+        // Assert
+        Assert.Equal(
+            $"[x; 1; 2]{Environment.NewLine}Node(1, value){Environment.NewLine}",
+            output
+        );
+    }
+
+    [Fact]
+    public void NestedArrayElementCanBeRead()
+    {
+        // Arrange
+        const string json = """
+                            {
+                              "seq": {
+                                "left": {
+                                  "assn": {
+                                    "dst": "array",
+                                    "src": {
+                                      "array": [
+                                        { "const": 1 },
+                                        { "array": [{ "const": 2 }] }
+                                      ]
+                                    }
+                                  }
+                                },
+                                "right": {
+                                  "write": {
+                                    "index": {
+                                      "array": {
+                                        "index": {
+                                          "array": { "var": "array" },
+                                          "index": { "const": 1 }
+                                        }
+                                      },
+                                      "index": { "const": 0 }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                            """;
+
+        // Act
+        var output = Execute(json);
+
+        // Assert
+        Assert.Equal($"2{Environment.NewLine}", output);
+    }
+
+    [Fact]
+    public void ArrayElementCanBeAssigned()
+    {
+        // Arrange
+        const string json = """
+                            {
+                              "seq": {
+                                "left": {
+                                  "assn": {
+                                    "dst": "array",
+                                    "src": {
+                                      "array": [{ "const": 1 }, { "const": 2 }]
+                                    }
+                                  }
+                                },
+                                "right": {
+                                  "seq": {
+                                    "left": {
+                                      "assn": {
+                                        "dst": {
+                                          "index": {
+                                            "array": { "var": "array" },
+                                            "index": { "const": 1 }
+                                          }
+                                        },
+                                        "src": { "const": 42 }
+                                      }
+                                    },
+                                    "right": {
+                                      "write": {
+                                        "index": {
+                                          "array": { "var": "array" },
+                                          "index": { "const": 1 }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                            """;
+
+        // Act
+        var output = Execute(json);
+
+        // Assert
+        Assert.Equal($"42{Environment.NewLine}", output);
+    }
+
+    [Fact]
+    public void ArrayLengthWritesElementCount()
+    {
+        // Arrange
+        const string json = """
+                            {
+                              "write": {
+                                "length": {
+                                  "array": [
+                                    { "const": 1 },
+                                    { "const": 2 },
+                                    { "const": 3 }
+                                  ]
+                                }
+                              }
+                            }
+                            """;
+
+        // Act
+        var output = Execute(json);
+
+        // Assert
+        Assert.Equal($"3{Environment.NewLine}", output);
+    }
+
+    [Fact]
+    public void ArrayIsWrittenInSourceLanguageFormat()
+    {
+        // Arrange
+        const string json = """
+                            {
+                              "write": {
+                                "array": [{ "const": 1 }, { "const": 2 }]
+                              }
+                            }
+                            """;
+
+        // Act
+        var output = Execute(json);
+
+        // Assert
+        Assert.Equal($"[1; 2]{Environment.NewLine}", output);
+    }
+
+    [Fact]
+    public void NestedArraySumProgramOutputs21()
+    {
+        // Arrange
+        var programPath = Path.GetFullPath(
+            Path.Combine(
+                AppContext.BaseDirectory,
+                "../../../../Interpreter/program.json"
+            )
+        );
+
+        var json = File.ReadAllText(programPath);
+
+        // Act
+        var output = Execute(json);
+
+        // Assert
+        Assert.Equal($"21{Environment.NewLine}", output);
+    }
+
     private static string Execute(
         string json,
         string input = "")
